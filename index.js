@@ -72,7 +72,12 @@ app.get('/approvedSessions', async (req, res) => {
         res.send(result);
       })
 
-
+      // post materials data
+      app.post('/materials', async(req, res) =>{
+        const material = req.body;
+        const result = await materialsCollection.insertOne(material);
+        res.send(result);
+      })
 
 
 
