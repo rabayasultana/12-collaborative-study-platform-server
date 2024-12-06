@@ -29,6 +29,8 @@ const client = new MongoClient(uri, {
     
       // session collection
       const sessionCollection = client.db("studyPlatformDB").collection("session");
+      // materials collection
+      const materialsCollection = client.db("studyPlatformDB").collection("materials");
 
       // get session data
       app.get('/session', async(req, res) =>{
@@ -62,6 +64,15 @@ app.get('/approvedSessions', async (req, res) => {
       res.status(500).send({ error: 'Failed to fetch approved sessions.' });
   }
 });
+
+
+      // get materials data
+      app.get('/materials', async(req, res) =>{
+        const result = await materialsCollection.find().toArray();
+        res.send(result);
+      })
+
+
 
 
 
