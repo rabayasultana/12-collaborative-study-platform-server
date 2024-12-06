@@ -43,6 +43,27 @@ const client = new MongoClient(uri, {
         res.send(result);
       })
 
+      // Get approved sessions by email and status
+app.get('/approvedSessions', async (req, res) => {
+  const { email } = req.query; // Get email from query parameters
+
+  if (!email) {
+      return res.status(400).send({ error: 'Email is required.' });
+  }
+
+  try {
+      // Query to find approved sessions for the given email
+      const query = { tutorEmail: email, status: 'approved' };
+      const approvedSessions = await sessionCollection.find(query).toArray();
+
+      res.send(approvedSessions); // Send the retrieved sessions back to the client
+  } catch (error) {
+      console.error('Error fetching approved sessions:', error);
+      res.status(500).send({ error: 'Failed to fetch approved sessions.' });
+  }
+});
+
+
 
       // Send a ping to confirm a successful connection
       await client.db("admin").command({ ping: 1 });
