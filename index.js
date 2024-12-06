@@ -30,8 +30,16 @@ const client = new MongoClient(uri, {
       // session collection
       const sessionCollection = client.db("studyPlatformDB").collection("session");
 
+      // get session data
       app.get('/session', async(req, res) =>{
         const result = await sessionCollection.find().toArray();
+        res.send(result);
+      })
+
+      // post session data
+      app.post('/session', async(req, res) =>{
+        const sessionItem = req.body;
+        const result = await sessionCollection.insertOne(sessionItem);
         res.send(result);
       })
 
