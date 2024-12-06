@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors')
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 9000;
 
@@ -78,6 +78,31 @@ app.get('/approvedSessions', async (req, res) => {
         const result = await materialsCollection.insertOne(material);
         res.send(result);
       })
+
+      // app.get('/materials/:id', async (req, res) => {
+      //   const id = req.params.id;
+      //   const query = { _id: new ObjectId(id) }
+      //   const result = await materialsCollection.findOne(query);
+      //   res.send(result)
+      // })
+
+
+      // update materials by id
+      app.patch('/materials/:id', async (req, res) => {
+        const item = req.body;
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id)}
+        const updatedDoc = {
+          $set: {
+            title: item.title,
+            driveLinks: item.driveLinks,
+            imageUrls: item.imageUrls
+          }
+        }
+        const result = await materialsCollection.updateOne(filter, updatedDoc)
+        res.send(result)
+      })
+
 
 
 
