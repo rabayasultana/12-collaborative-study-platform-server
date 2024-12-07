@@ -74,6 +74,15 @@ async function run() {
       res.send(result);
     });
 
+        // delete session by id
+        app.delete("/session/:id", async (req, res) => {
+          const id = req.params.id;
+          const query = { _id: new ObjectId(id) };
+          const result = await sessionCollection.deleteOne(query);
+          res.send(result);
+        });
+        
+
     // // update sessions by id
     // app.patch("/updateSession/:id", async (req, res) => {
     //   const item = req.body;
