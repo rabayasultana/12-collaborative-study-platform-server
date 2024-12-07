@@ -45,6 +45,21 @@ const client = new MongoClient(uri, {
         res.send(result);
       })
 
+// update session status
+      app.patch('/session/:id', async (req, res) => {
+        const item = req.body;
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id)}
+        const updatedDoc = {
+          $set: {
+            status: item.status,
+            fee: item.fee,
+          }
+        }
+        const result = await sessionCollection.updateOne(filter, updatedDoc)
+        res.send(result)
+      })
+
       // Get approved sessions by email and status
 app.get('/approvedSessions', async (req, res) => {
   const { email } = req.query; // Get email from query parameters
