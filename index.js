@@ -148,12 +148,33 @@ async function run() {
       res.send(result);
     });
 
-    // app.get('/materials/:id', async (req, res) => {
-    //   const id = req.params.id;
-    //   const query = { _id: new ObjectId(id) }
-    //   const result = await materialsCollection.findOne(query);
-    //   res.send(result)
-    // })
+    app.get('/materials/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await materialsCollection.findOne(query);
+      res.send(result)
+    })
+
+    app.get("/tutorMaterials", async (req, res) => {
+      const { email } = req.query; // Get email from query parameters
+    
+      if (!email) {
+        return res.status(400).send({ error: "Email is required." });
+      }
+    
+      try {
+        // Query to find materials for the given tutor email
+        const query = { tutorEmail: email };
+        const tutorMaterials = await materialsCollection.find(query).toArray();
+    
+        // Send the retrieved materials back to the client
+        res.send(tutorMaterials);
+      } catch (error) {
+        console.error("Error fetching materials:", error);
+        res.status(500).send({ error: "Failed to fetch materials." });
+      }
+    });
+    
 
     // update materials by id
     app.patch("/materials/:id", async (req, res) => {
