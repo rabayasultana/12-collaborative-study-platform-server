@@ -23,6 +23,10 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // session collection
+    const userCollection = client
+      .db("studyPlatformDB")
+      .collection("users");
+    // session collection
     const sessionCollection = client
       .db("studyPlatformDB")
       .collection("session");
@@ -30,6 +34,13 @@ async function run() {
     const materialsCollection = client
       .db("studyPlatformDB")
       .collection("materials");
+
+      // users related api
+      app.post("/users", async (req, res) => {
+        const user = req.body;
+        const result = await userCollection.insertOne(user);
+        res.send(result);
+      });
 
     // get session data
     app.get("/session", async (req, res) => {
@@ -81,7 +92,7 @@ async function run() {
           const result = await sessionCollection.deleteOne(query);
           res.send(result);
         });
-        
+
 
     // // update sessions by id
     // app.patch("/updateSession/:id", async (req, res) => {
