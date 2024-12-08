@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 9000;
@@ -35,6 +36,29 @@ async function run() {
       .db("studyPlatformDB")
       .collection("materials");
 
+        // jwt related api
+    app.post('/jwt', async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+      res.send({ token });
+    })
+
+        // middlewares 
+        const verifyToken = (req, res, next) => {
+          console.log('inside verify token', req.headers.authorization);
+          if (!req.headers.authorization) {
+            return res.status(401).send({ message: 'unauthorized access' });
+          }
+          const token = req.headers.authorization.split(' ')[1];
+          jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+            if (err) {
+              return res.status(401).send({ message: 'unauthorized access' })
+            }
+            req.decoded = decoded;
+            next();
+          })
+        }
+
       // users related api
       // get users data
       // app.get("/users", async (req, res) => {
@@ -42,8 +66,7 @@ async function run() {
       //   res.send(result);
       // })
 
-      app.get("/users", async (req, res) => {
-        try {
+      app.get("/users", verifyToken,  async (req, res) => {
           const search = req.query.search || ""; // Retrieve search query parameter
           let query = {};
       
@@ -60,10 +83,6 @@ async function run() {
           // Fetch users from the database based on the query
           const users = await userCollection.find(query).toArray();
           res.send(users); // Send users to the client
-        } catch (error) {
-          console.error("Error fetching users:", error);
-          res.status(500).send({ error: "Failed to fetch users." });
-        }
       });
       
 
