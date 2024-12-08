@@ -36,6 +36,21 @@ async function run() {
       .collection("materials");
 
       // users related api
+      // get users data
+      app.get("/users", async (req, res) => {
+        const result = await userCollection.find().toArray();
+        res.send(result);
+      })
+
+      // delete users
+      app.delete('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) }
+        const result = await userCollection.deleteOne(query);
+        res.send(result);
+      })
+  
+      // post users data
       app.post("/users", async (req, res) => {
         const user = req.body;
         const query = { email: user.email }
