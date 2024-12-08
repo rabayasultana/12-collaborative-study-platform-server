@@ -31,6 +31,12 @@ async function run() {
     const sessionCollection = client
       .db("studyPlatformDB")
       .collection("session");
+
+    // Booked session collection
+    const bookedSessionCollection = client
+      .db("studyPlatformDB")
+      .collection("bookedSession");
+
     // materials collection
     const materialsCollection = client
       .db("studyPlatformDB")
@@ -76,12 +82,39 @@ async function run() {
       const email = req.decoded.email;
       const query = { email: email };
       const user = await userCollection.findOne(query);
-      const isAdmin = user?.role === 'tutor';
-      if (!isAdmin) {
+      const isTutor = user?.role === 'tutor';
+      if (!isTutor) {
         return res.status(403).send({ message: 'forbidden access' });
       }
       next();
     }
+
+         // use verify student after verifyToken
+         const verifyStudent = async (req, res, next) => {
+          const email = req.decoded.email;
+          const query = { email: email };
+          const user = await userCollection.findOne(query);
+          const isStudent = user?.role === 'student';
+          if (!isStudent) {
+            return res.status(403).send({ message: 'forbidden access' });
+          }
+          next();
+        }
+
+    // verify Tutor or admin
+    // const verifyTutorOrAdmin = async (req, res, next) => {
+    //   const email = req.decoded.email;
+    //   const query = { email: email };
+    //   const user = await userCollection.findOne(query);
+    //   const isAdmin = user?.role === 'admin';
+    //   const isTutor = user?.role === 'tutor';
+
+    //   if (!isTutor || !isAdmin) {
+    //     return res.status(403).send({ message: 'forbidden access' });
+    //   }
+    //   next();
+    // }
+    
 
       // users related api
       // get users data
@@ -90,12 +123,12 @@ async function run() {
       //   res.send(result);
       // })
 
+      // view all users
       app.get("/users", verifyToken, verifyAdmin, async (req, res) => {
           const search = req.query.search || ""; // Retrieve search query parameter
           let query = {};
       
           if (search) {
-            // Add search conditions if search query exists
             query = {
               $or: [
                 { name: { $regex: search, $options: "i" } },
@@ -103,10 +136,8 @@ async function run() {
               ],
             };
           }
-      
-          // Fetch users from the database based on the query
           const users = await userCollection.find(query).toArray();
-          res.send(users); // Send users to the client
+          res.send(users); 
       });
 
       // check if admin or not
@@ -136,11 +167,28 @@ async function run() {
         
               const query = { email: email };
               const user = await userCollection.findOne(query);
-              let admin = false;
+              let tutor = false;
               if (user) {
                 tutor = user?.role === 'tutor';
               }
               res.send({ tutor });
+            })
+
+             // check if student or not
+             app.get('/users/student/:email', verifyToken, async (req, res) => {
+              const email = req.params.email;
+        
+              if (email !== req.decoded.email) {
+                return res.status(403).send({ message: 'forbidden access' })
+              }
+        
+              const query = { email: email };
+              const user = await userCollection.findOne(query);
+              let student = false;
+              if (user) {
+                student = user?.role === 'student';
+              }
+              res.send({ student });
             })
       
 
@@ -190,14 +238,14 @@ async function run() {
     });
 
     // post session data
-    app.post("/session", async (req, res) => {
+    app.post("/session", verifyToken, verifyTutor, async (req, res) => {
       const sessionItem = req.body;
       const result = await sessionCollection.insertOne(sessionItem);
       res.send(result);
     });
 
     // update session
-    app.patch("/session/:id", async (req, res) => {
+    app.patch("/session/:id", verifyToken, async (req, res) => {
       const item = req.body;
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -226,23 +274,9 @@ async function run() {
           res.send(result);
         });
 
-
-    // // update sessions by id
-    // app.patch("/updateSession/:id", async (req, res) => {
-    //   const item = req.body;
-    //   const id = req.params.id;
-    //   const filter = { _id: new ObjectId(id) };
-    //   const updatedDoc = {
-    //     $set: {
-    //       title: item.title,
-    //     },
-    //   };
-    //   const result = await sessionCollection.updateOne(filter, updatedDoc);
-    //   res.send(result);
-    // });
-
+  
     // Get approved sessions by email and status
-    app.get("/approvedSessions", async (req, res) => {
+    app.get("/approvedSessions", verifyToken, verifyTutor, async (req, res) => {
       const { email } = req.query; // Get email from query parameters
 
       if (!email) {
@@ -261,6 +295,35 @@ async function run() {
       }
     });
 
+       // booked session
+       app.post("/bookedSession", verifyToken, verifyStudent, async (req, res) => {
+        const item = req.body;
+        const result = await bookedSessionCollection.insertOne(item);
+        res.send(result);
+      });
+
+      // get booked session
+       // Get approved sessions by email and status
+       app.get("/bookedSessions", verifyToken, verifyStudent, async (req, res) => {
+        const { studentEmail, sessionId } = req.query; // Get parameters from query string
+      
+        // Validate required query parameters
+        if (!studentEmail || !sessionId) {
+          return res.status(400).send({ error: "Both studentEmail and sessionId are required." });
+        }
+      
+        try {
+          // Query the database for booked sessions matching the given email and session ID
+          const query = { studentEmail, sessionId };
+          const bookedSessions = await bookedSessionCollection.find(query).toArray();
+      
+          res.status(200).send(bookedSessions); // Respond with the retrieved sessions
+        } catch (error) {
+          console.error("Error fetching booked sessions:", error);
+          res.status(500).send({ error: "Failed to fetch booked sessions." });
+        }
+      });
+      
 
     // get materials data
     app.get("/materials", async (req, res) => {
@@ -269,7 +332,7 @@ async function run() {
     });
 
     // post materials data
-    app.post("/materials", async (req, res) => {
+    app.post("/materials", verifyToken, verifyTutor, async (req, res) => {
       const material = req.body;
       const result = await materialsCollection.insertOne(material);
       res.send(result);
@@ -282,7 +345,7 @@ async function run() {
       res.send(result)
     })
 
-    app.get("/tutorMaterials", async (req, res) => {
+    app.get("/tutorMaterials", verifyToken, verifyTutor, async (req, res) => {
       const { email } = req.query; // Get email from query parameters
     
       if (!email) {
@@ -326,6 +389,7 @@ async function run() {
       const result = await materialsCollection.deleteOne(query);
       res.send(result);
     });
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
