@@ -37,13 +37,48 @@ async function run() {
 
       // users related api
       // get users data
+      // app.get("/users", async (req, res) => {
+      //   const result = await userCollection.find().toArray();
+      //   res.send(result);
+      // })
+
       app.get("/users", async (req, res) => {
-        const result = await userCollection.find().toArray();
+        try {
+          const search = req.query.search || ""; // Retrieve search query parameter
+          let query = {};
+      
+          if (search) {
+            // Add search conditions if search query exists
+            query = {
+              $or: [
+                { name: { $regex: search, $options: "i" } },
+                { email: { $regex: search, $options: "i" } },
+              ],
+            };
+          }
+      
+          // Fetch users from the database based on the query
+          const users = await userCollection.find(query).toArray();
+          res.send(users); // Send users to the client
+        } catch (error) {
+          console.error("Error fetching users:", error);
+          res.status(500).send({ error: "Failed to fetch users." });
+        }
+      });
+      
+
+      // update user role
+      app.patch('/users/role/:id', async (req, res) => {
+        const id = req.params.id;
+        const { role } = req.body;
+        const filter = { _id: new ObjectId(id) };
+        const updatedDoc = { $set: { role } }
+        const result = await userCollection.updateOne(filter, updatedDoc);
         res.send(result);
       })
 
       // delete users
-      app.delete('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
+      app.delete('/users/:id', async (req, res) => {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) }
         const result = await userCollection.deleteOne(query);
