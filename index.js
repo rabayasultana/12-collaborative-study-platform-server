@@ -308,18 +308,23 @@ async function run() {
       });
 
       // get booked session
-       // Get approved sessions by email and status
+       // Get booked sessions by email and sessionId or only by email
        app.get("/bookedSessions", verifyToken, verifyStudent, async (req, res) => {
         const { studentEmail, sessionId } = req.query; // Get parameters from query string
       
         // Validate required query parameters
-        if (!studentEmail || !sessionId) {
-          return res.status(400).send({ error: "Both studentEmail and sessionId are required." });
+        if (!studentEmail) {
+          return res.status(400).send({ error: "Student email is required." });
         }
       
         try {
-          // Query the database for booked sessions matching the given email and session ID
-          const query = { studentEmail, sessionId };
+          // Build query dynamically based on available parameters
+          const query = { studentEmail };
+          if (sessionId) {
+            query.sessionId = sessionId;
+          }
+      
+          // Query the database for booked sessions matching the given criteria
           const bookedSessions = await bookedSessionCollection.find(query).toArray();
       
           res.status(200).send(bookedSessions); // Respond with the retrieved sessions
@@ -328,6 +333,7 @@ async function run() {
           res.status(500).send({ error: "Failed to fetch booked sessions." });
         }
       });
+      
       
 
     // get materials data
@@ -411,26 +417,47 @@ async function run() {
 
 
 
-
-          app.get("/bookedSessions", verifyToken, verifyStudent, async (req, res) => {
-            const { studentEmail, sessionId } = req.query; // Get parameters from query string
+// get notes by email
+          app.get("/notes", verifyToken, verifyStudent, async (req, res) => {
+            const { studentEmail } = req.query; // Get parameters from query string
           
             // Validate required query parameters
-            if (!studentEmail || !sessionId) {
-              return res.status(400).send({ error: "Both studentEmail and sessionId are required." });
+            if (!studentEmail) {
+              return res.status(400).send({ error: "studentEmail are required." });
             }
           
             try {
               // Query the database for booked sessions matching the given email and session ID
-              const query = { studentEmail, sessionId };
-              const bookedSessions = await bookedSessionCollection.find(query).toArray();
+              const query = { studentEmail };
+              const notes = await noteCollection.find(query).toArray();
           
-              res.status(200).send(bookedSessions); // Respond with the retrieved sessions
+              res.status(200).send(notes); // Respond with the retrieved sessions
             } catch (error) {
-              console.error("Error fetching booked sessions:", error);
-              res.status(500).send({ error: "Failed to fetch booked sessions." });
+              console.error("Error fetching notes:", error);
+              res.status(500).send({ error: "Failed to fetch notes." });
             }
           });
+
+          // delete note
+          app.delete("/notes/:id", verifyToken, verifyStudent, async (req, res) => {
+            const { id } = req.params;
+            const result = await noteCollection.deleteOne({ _id: new ObjectId(id) });
+            res.send(result);
+          });
+
+          // update note
+          app.patch("/notes/:id", verifyToken, verifyStudent, async (req, res) => {
+            const { id } = req.params;
+            const { title, description } = req.body;
+          
+            const result = await noteCollection.updateOne(
+              { _id: new ObjectId(id) },
+              { $set: { title, description } }
+            );
+            res.send(result);
+          });
+          
+          
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
