@@ -4,6 +4,9 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
+
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
 const port = process.env.PORT || 9000;
 
 // Middleware
@@ -45,6 +48,9 @@ async function run() {
 
     // notes collection
     const reviewCollection = client.db("studyPlatformDB").collection("reviews");
+
+    // notes collection
+    const paymentCollection = client.db("studyPlatformDB").collection("payments");
 
     // jwt related api
     app.post("/jwt", async (req, res) => {
@@ -515,6 +521,32 @@ async function run() {
         }
       }
     );
+
+       // payment intent
+       app.post('/create-payment-intent', async (req, res) => {
+        const { fee } = req.body;
+        const amount = parseInt(fee * 100);
+        console.log(amount, 'amount inside the intent')
+  
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: amount,
+          currency: 'usd',
+          payment_method_types: ['card']
+        });
+  
+        res.send({
+          clientSecret: paymentIntent.client_secret
+        })
+      });
+  
+  
+      // post payment
+      app.post('/payments', async (req, res) => {
+        const payment = req.body;
+        const paymentResult = await paymentCollection.insertOne(payment);
+  
+        res.send({ paymentResult });
+      })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
