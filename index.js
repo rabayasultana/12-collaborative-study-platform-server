@@ -42,6 +42,11 @@ async function run() {
       .db("studyPlatformDB")
       .collection("materials");
 
+    // notes collection
+    const noteCollection = client
+      .db("studyPlatformDB")
+      .collection("notes");
+
         // jwt related api
     app.post('/jwt', async (req, res) => {
       const user = req.body;
@@ -390,6 +395,42 @@ async function run() {
       res.send(result);
     });
 
+
+        // // get notes data
+        // app.get("/note", async (req, res) => {
+        //   const result = await noteCollection.find().toArray();
+        //   res.send(result);
+        // });
+
+    // note related api
+           app.post("/note", verifyToken, verifyStudent, async (req, res) => {
+            const item = req.body;
+            const result = await noteCollection.insertOne(item);
+            res.send(result);
+          });
+
+
+
+
+          app.get("/bookedSessions", verifyToken, verifyStudent, async (req, res) => {
+            const { studentEmail, sessionId } = req.query; // Get parameters from query string
+          
+            // Validate required query parameters
+            if (!studentEmail || !sessionId) {
+              return res.status(400).send({ error: "Both studentEmail and sessionId are required." });
+            }
+          
+            try {
+              // Query the database for booked sessions matching the given email and session ID
+              const query = { studentEmail, sessionId };
+              const bookedSessions = await bookedSessionCollection.find(query).toArray();
+          
+              res.status(200).send(bookedSessions); // Respond with the retrieved sessions
+            } catch (error) {
+              console.error("Error fetching booked sessions:", error);
+              res.status(500).send({ error: "Failed to fetch booked sessions." });
+            }
+          });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
