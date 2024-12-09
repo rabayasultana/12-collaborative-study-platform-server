@@ -373,29 +373,35 @@ async function run() {
       }
     });
 
-    
-    app.get("/studentMaterials/:sessionId", verifyToken, verifyStudent, async (req, res) => {
-      const { sessionId } = req.params; // Get sessionId from URL params
-    
-      if (!sessionId) {
-        return res.status(400).send({ error: "Session ID is required." });
-      }
-    
-      try {
-        const query = { sessionId }; // Query to find materials for the session
-        const materials = await materialsCollection.find(query).toArray();
-    
-        if (!materials || materials.length === 0) {
-          return res.status(404).send({ error: "No materials found for this session." });
+    // get materials by sessionId
+    app.get(
+      "/studentMaterials/:sessionId",
+      verifyToken,
+      verifyStudent,
+      async (req, res) => {
+        const { sessionId } = req.params; // Get sessionId from URL params
+
+        if (!sessionId) {
+          return res.status(400).send({ error: "Session ID is required." });
         }
-    
-        res.status(200).send(materials);
-      } catch (error) {
-        console.error("Error fetching materials:", error);
-        res.status(500).send({ error: "Failed to fetch materials." });
+
+        try {
+          const query = { sessionId }; // Query to find materials for the session
+          const materials = await materialsCollection.find(query).toArray();
+
+          if (!materials || materials.length === 0) {
+            return res
+              .status(404)
+              .send({ error: "No materials found for this session." });
+          }
+
+          res.status(200).send(materials);
+        } catch (error) {
+          console.error("Error fetching materials:", error);
+          res.status(500).send({ error: "Failed to fetch materials." });
+        }
       }
-    });
-    
+    );
 
     // update materials by id
     app.patch("/materials/:id", async (req, res) => {
@@ -421,12 +427,6 @@ async function run() {
       res.send(result);
     });
 
-    // // get notes data
-    // app.get("/note", async (req, res) => {
-    //   const result = await noteCollection.find().toArray();
-    //   res.send(result);
-    // });
-
     // note related api
     app.post("/note", verifyToken, verifyStudent, async (req, res) => {
       const item = req.body;
@@ -434,8 +434,14 @@ async function run() {
       res.send(result);
     });
 
+    // get notes data
+    app.get("/note",verifyToken, verifyTutor, async (req, res) => {
+      const result = await noteCollection.find().toArray();
+      res.send(result);
+    });
+
     // get notes by email
-    app.get("/notes", verifyToken, verifyStudent, async (req, res) => {
+    app.get("/studentNotes", verifyToken, verifyStudent, async (req, res) => {
       const { studentEmail } = req.query; // Get parameters from query string
 
       // Validate required query parameters
@@ -480,6 +486,35 @@ async function run() {
       const result = await reviewCollection.insertOne(item);
       res.send(result);
     });
+
+    // get reviews by session id
+    app.get(
+      "/reviews/:sessionId",
+      verifyToken,
+      async (req, res) => {
+        const { sessionId } = req.params; // Get sessionId from URL params
+
+        if (!sessionId) {
+          return res.status(400).send({ error: "Session ID is required." });
+        }
+
+        try {
+          const query = { sessionId }; // Query to find materials for the session
+          const reviews = await reviewCollection.find(query).toArray();
+
+          if (!reviews || reviews.length === 0) {
+            return res
+              .status(404)
+              .send({ error: "No reviews found for this session." });
+          }
+
+          res.status(200).send(reviews);
+        } catch (error) {
+          console.error("Error fetching reviews:", error);
+          res.status(500).send({ error: "Failed to fetch reviews." });
+        }
+      }
+    );
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
