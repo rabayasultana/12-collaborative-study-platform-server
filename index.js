@@ -47,6 +47,11 @@ async function run() {
       .db("studyPlatformDB")
       .collection("notes");
 
+    // notes collection
+    const reviewCollection = client
+      .db("studyPlatformDB")
+      .collection("reviews");
+
         // jwt related api
     app.post('/jwt', async (req, res) => {
       const user = req.body;
@@ -458,6 +463,14 @@ async function run() {
           });
           
           
+
+              // reviews related api
+              app.post("/reviews", verifyToken, verifyStudent, async (req, res) => {
+                const item = req.body;
+                const result = await reviewCollection.insertOne(item);
+                res.send(result);
+              });
+    
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
