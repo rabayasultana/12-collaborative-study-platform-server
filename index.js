@@ -11,6 +11,13 @@ const port = process.env.PORT || 9000;
 
 // Middleware
 app.use(cors());
+// app.use(cors({
+//   origin: [
+//     // 'http://localhost:9000',
+//     'https://12-study-platform-server.vercel.app',
+//     'https://12-study-platform-server-b0fzkaetm-react-practice1.vercel.app'
+//   ]
+// }));
 app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.mwqipy1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -306,13 +313,14 @@ async function run() {
     // booked session
     app.post("/bookedSession", verifyToken, verifyStudent, async (req, res) => {
       const item = req.body;
+      console.log(item);
       const result = await bookedSessionCollection.insertOne(item);
       res.send(result);
     });
 
     // get booked session
     // Get booked sessions by email and sessionId or only by email
-    app.get("/bookedSessions", verifyToken, verifyStudent, async (req, res) => {
+    app.get("/bookedSessions", verifyToken, async (req, res) => {
       const { studentEmail, sessionId } = req.query; // Get parameters from query string
 
       // Validate required query parameters
@@ -549,10 +557,10 @@ async function run() {
       })
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
   }
 }
