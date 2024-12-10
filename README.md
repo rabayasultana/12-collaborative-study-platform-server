@@ -1,8 +1,8 @@
 # Website name: Synapse
 
-**Live Site URL:** [(https://collaborative-study-platfrm.web.app/)]  
-**Admin Username:** [admin@gmail.com]  
-**Admin Password:** [admin1A#]
+**Live Site URL:** (https://collaborative-study-platfrm.web.app/)  
+**Admin Username:** admin@gmail.com
+**Admin Password:** admin1A#
 
 ## About Synapse
 Synapse is a dynamic platform designed to connect students, tutors, and administrators, streamlining educational activities such as study session scheduling, resource sharing, and user management.
